@@ -3,26 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz App</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Question Catalogue</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #222;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .progress-bar {
+            background: #ddd;
+            color: black;
+            padding: 10px;
+            font-size: 1.2em;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            flex-wrap: wrap;
+        }
+        .question-section {
+            flex: 1;
+            text-align: left;
+            font-size: 1.5em;
+            padding: 10px;
+        }
+        .image-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+        .image-section img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+        }
+        .answers-section {
+            margin-top: 20px;
+        }
+        .answer {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px auto;
+            width: 50%;
+            background: #444;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+        .correct {
+            background: #4CAF50 !important;
+            color: white;
+        }
+        .navigation {
+            margin-top: 20px;
+        }
+        button {
+            background: #fff;
+            color: black;
+            padding: 10px 20px;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #ddd;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div id="progress-bar"></div>
-        <h2 id="category-title"></h2>
-        <div class="quiz-content">
-            <div class="question-section">
-                <h3 id="question-number"></h3>
-                <p id="question-text"></p>
-            </div>
-            <div class="image-section">
-                <img id="question-image" src="" alt="Question Image">
-            </div>
-        </div>
-        <div id="answer-options"></div>
-        <button id="prev-btn">Previous</button>
-        <button id="next-btn">Next</button>
+    <div class="progress-bar">
+        <span id="progress-text">0 / 52 Fragen, Kategorie</span>
     </div>
-    <script src="script.js"></script>
+    
+    <div class="container">
+        <div class="question-section">
+            <h2 id="question-number">Frage 1</h2>
+            <p id="question-text">Lade Frage...</p>
+        </div>
+        <div class="image-section">
+            <img id="question-image" src="images/default.png" alt="Frage Bild">
+        </div>
+    </div>
+    
+    <div class="answers-section">
+        <div id="answers"></div>
+        <button id="toggle-correct">Nur richtige Antworten anzeigen</button>
+    </div>
+    
+    <div class="navigation">
+        <button id="prev">Zurück</button>
+        <button id="next">Weiter</button>
+    </div>
+    
+    <script>
+        let questions = [];
+        let currentIndex = 0;
+        let showOnlyCorrect = false;
+        
+        async function loadQuestions() {
+            try {
+                const response = await fetch('questions.json');
+                questions = await response.json();
+                updateQuestion();
+            } catch (error) {
+                console.error('Fehler beim Laden der Fragen:', error);
+            }
+        }
+        
+        function updateQuestion() {
+            if (questions.length === 0) return;
+            const question = questions[currentIndex];
+            document.getElementById('progress-text').textContent = `${currentIndex + 1} / ${questions.length} Fragen, ${question.category}`;
+            document.getElementById('question-number').textContent = `Frage ${question.id}`;
+            document.getElementById('question-text').textContent = question.text;
+            document.getElementById('question-image').src = `images/${question.image}`;
+            
+            const answersContainer = document.getElementById('answers');
+            answersContainer.innerHTML = '';
+            question.answers.forEach(answer => {
+                if (!showOnlyCorrect || answer.correct) {
+                    const answerDiv = document.createElement('div');
+                    answerDiv.textContent = answer.text;
+                    answerDiv.classList.add('answer');
+                    if (answer.correct) answerDiv.classList.add('correct');
+                    answersContainer.appendChild(answerDiv);
+                }
+            });
+        }
+        
+        document.getElementById('prev').addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateQuestion();
+            }
+        });
+        
+        document.getElementById('next').addEventListener('click', () => {
+            if (currentIndex < questions.length - 1) {
+                currentIndex++;
+                updateQuestion();
+            }
+        });
+        
+        document.getElementById('toggle-correct').addEventListener('click', () => {
+            showOnlyCorrect = !showOnlyCorrect;
+            updateQuestion();
+        });
+        
+        loadQuestions();
+    </script>
 </body>
 </html>
