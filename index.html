@@ -76,7 +76,7 @@
         button:hover {
             background: #ddd;
         }
-        .category-filter, .search-bar {
+        .category-filter {
             margin-top: 10px;
         }
     </style>
@@ -91,12 +91,6 @@
         <select id="category-select">
             <option value="all">Alle Kategorien</option>
         </select>
-    </div>
-    
-    <div class="search-bar">
-        <label for="question-search">Fragenummer:</label>
-        <input type="number" id="question-search" min="1">
-        <button id="search-button">Suchen</button>
     </div>
     
     <div class="container">
@@ -171,11 +165,11 @@
             answersContainer.innerHTML = '';
             
             question.options.forEach(option => {
-                const answerDiv = document.createElement('div');
-                answerDiv.textContent = option.text;
-                answerDiv.classList.add('answer');
-                if (option.correct) answerDiv.classList.add('correct');
                 if (!showOnlyCorrect || option.correct) {
+                    const answerDiv = document.createElement('div');
+                    answerDiv.textContent = option.text;
+                    answerDiv.classList.add('answer');
+                    if (option.correct) answerDiv.classList.add('correct');
                     answersContainer.appendChild(answerDiv);
                 }
             });
@@ -191,15 +185,6 @@
         document.getElementById('next').addEventListener('click', () => {
             if (currentIndex < filteredQuestions.length - 1) {
                 currentIndex++;
-                updateQuestion();
-            }
-        });
-        
-        document.getElementById('search-button').addEventListener('click', () => {
-            const searchNumber = parseInt(document.getElementById('question-search').value, 10);
-            const foundIndex = filteredQuestions.findIndex(q => q.question_number === searchNumber);
-            if (foundIndex !== -1) {
-                currentIndex = foundIndex;
                 updateQuestion();
             }
         });
