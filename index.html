@@ -76,11 +76,21 @@
         button:hover {
             background: #ddd;
         }
+        .category-filter {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="progress-bar">
         <span id="progress-text">0 / 52 Fragen, Kategorie</span>
+    </div>
+    
+    <div class="category-filter">
+        <label for="category-select">Kategorie:</label>
+        <select id="category-select">
+            <option value="all">Alle Kategorien</option>
+        </select>
     </div>
     
     <div class="container">
@@ -105,75 +115,91 @@
     
     <script>
         let questions = [];
-		let currentIndex = 0;
-		let showOnlyCorrect = false;
-		
-		async function loadQuestions() {
-			try {
-				const response = await fetch('questions.json');
-				if (!response.ok) throw new Error('JSON file not found or cannot be loaded');
-				questions = await response.json();
-				updateQuestion();
-			} catch (error) {
-				console.error('Error loading questions:', error);
-				document.getElementById('question-text').textContent = 'Fehler beim Laden der Fragen!';
-			}
-		}
-		
-		function updateQuestion() {
-			if (questions.length === 0) return;
-		
-			const question = questions[currentIndex];
-		
-			// Update progress bar
-			document.getElementById('progress-text').textContent = 
-				`${currentIndex + 1} / ${questions.length} Fragen, ${question.categories.join(', ')}`;
-		
-			// Update question text
-			document.getElementById('question-number').textContent = `Frage ${question.question_number}`;
-			document.getElementById('question-text').textContent = question.question;
-		
-			// Update image
-			document.getElementById('question-image').src = question.image;
-		
-			// Update answers
-			const answersContainer = document.getElementById('answers');
-			answersContainer.innerHTML = '';
-		
-			question.options.forEach(option => {
-				if (!showOnlyCorrect || option.correct) {
-					const answerDiv = document.createElement('div');
-					answerDiv.textContent = option.text;
-					answerDiv.classList.add('answer');
-					if (option.correct) answerDiv.classList.add('correct');
-					answersContainer.appendChild(answerDiv);
-				}
-			});
-		}
-		
-		// Navigation buttons
-		document.getElementById('prev').addEventListener('click', () => {
-			if (currentIndex > 0) {
-				currentIndex--;
-				updateQuestion();
-			}
-		});
-		
-		document.getElementById('next').addEventListener('click', () => {
-			if (currentIndex < questions.length - 1) {
-				currentIndex++;
-				updateQuestion();
-			}
-		});
-		
-		// Toggle correct answers
-		document.getElementById('toggle-correct').addEventListener('click', () => {
-			showOnlyCorrect = !showOnlyCorrect;
-			updateQuestion();
-		});
-		
-		// Load questions
-		loadQuestions();	
+        let filteredQuestions = [];
+        let currentIndex = 0;
+        let showOnlyCorrect = false;
+        let selectedCategory = "all";
+        
+        async function loadQuestions() {
+            try {
+                const response = await fetch('questions.json');
+                if (!response.ok) throw new Error('JSON file not found or cannot be loaded');
+                questions = await response.json();
+                populateCategories();
+                filterQuestions();
+            } catch (error) {
+                console.error('Error loading questions:', error);
+                document.getElementById('question-text').textContent = 'Fehler beim Laden der Fragen!';
+            }
+        }
+        
+        function populateCategories() {
+            const categorySelect = document.getElementById('category-select');
+            const categories = new Set();
+            questions.forEach(q => q.categories.forEach(cat => categories.add(cat)));
+            
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                categorySelect.appendChild(option);
+            });
+        }
+        
+        function filterQuestions() {
+            filteredQuestions = selectedCategory === "all" ? questions : questions.filter(q => q.categories.includes(selectedCategory));
+            currentIndex = 0;
+            updateQuestion();
+        }
+        
+        function updateQuestion() {
+            if (filteredQuestions.length === 0) return;
+            
+            const question = filteredQuestions[currentIndex];
+            document.getElementById('progress-text').textContent = `${currentIndex + 1} / ${filteredQuestions.length} Fragen, ${question.categories.join(', ')}`;
+            document.getElementById('question-number').textContent = `Frage ${question.question_number}`;
+            document.getElementById('question-text').textContent = question.question;
+            document.getElementById('question-image').src = question.image;
+            
+            const answersContainer = document.getElementById('answers');
+            answersContainer.innerHTML = '';
+            
+            question.options.forEach(option => {
+                if (!showOnlyCorrect || option.correct) {
+                    const answerDiv = document.createElement('div');
+                    answerDiv.textContent = option.text;
+                    answerDiv.classList.add('answer');
+                    if (option.correct) answerDiv.classList.add('correct');
+                    answersContainer.appendChild(answerDiv);
+                }
+            });
+        }
+        
+        document.getElementById('prev').addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateQuestion();
+            }
+        });
+        
+        document.getElementById('next').addEventListener('click', () => {
+            if (currentIndex < filteredQuestions.length - 1) {
+                currentIndex++;
+                updateQuestion();
+            }
+        });
+        
+        document.getElementById('toggle-correct').addEventListener('click', () => {
+            showOnlyCorrect = !showOnlyCorrect;
+            updateQuestion();
+        });
+        
+        document.getElementById('category-select').addEventListener('change', (event) => {
+            selectedCategory = event.target.value;
+            filterQuestions();
+        });
+        
+        loadQuestions();
     </script>
 </body>
 </html>
