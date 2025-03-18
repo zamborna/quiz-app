@@ -76,7 +76,7 @@
         button:hover {
             background: #ddd;
         }
-        .category-filter {
+        .category-filter, .search-bar {
             margin-top: 10px;
         }
     </style>
@@ -91,6 +91,12 @@
         <select id="category-select">
             <option value="all">Alle Kategorien</option>
         </select>
+    </div>
+    
+    <div class="search-bar">
+        <label for="question-search">Fragenummer:</label>
+        <input type="number" id="question-search" min="1">
+        <button id="search-button">Suchen</button>
     </div>
     
     <div class="container">
@@ -189,9 +195,13 @@
             }
         });
         
-        document.getElementById('toggle-correct').addEventListener('click', () => {
-            showOnlyCorrect = !showOnlyCorrect;
-            updateQuestion();
+        document.getElementById('search-button').addEventListener('click', () => {
+            const searchNumber = parseInt(document.getElementById('question-search').value, 10);
+            const foundIndex = filteredQuestions.findIndex(q => q.question_number === searchNumber);
+            if (foundIndex !== -1) {
+                currentIndex = foundIndex;
+                updateQuestion();
+            }
         });
         
         document.getElementById('category-select').addEventListener('change', (event) => {
