@@ -1,112 +1,105 @@
-<script>
-    let questions = [];
-    let selectedQuestions = [];
-    let filteredQuestions = [];
-    let currentIndex = 0;
-    let showOnlyCorrect = false;
-    let selectedCategory = "all";
-    let showOnlySelected = false;
-
-    async function loadQuestions() {
-        try {
-            const [questionsResponse, selectedResponse] = await Promise.all([
-                fetch('questions.json'),
-                fetch('selected-questions.json')
-            ]);
-
-            if (!questionsResponse.ok || !selectedResponse.ok) throw new Error('Fehler beim Laden der Dateien.');
-
-            questions = await questionsResponse.json();
-            selectedQuestions = await selectedResponse.json(); // e.g., [1, 3, 5]
-
-            populateCategories();
-            filterQuestions();
-        } catch (error) {
-            console.error('Fehler beim Laden:', error);
-            document.getElementById('question-text').textContent = 'Fehler beim Laden der Fragen!';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Catalogue</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #222;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
         }
-    }
-
-    function populateCategories() {
-        const categorySelect = document.getElementById('category-select');
-        const categories = new Set();
-        questions.forEach(q => q.categories.forEach(cat => categories.add(cat)));
+        .category-filter {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar">
+        <span id="progress-text">0 / 52 Fragen, Kategorie</span>
+    </div>
+    
+    <div class="category-filter">
+        <label for="category-select">Kategorie:</label>
+        <select id="category-select">
+            <option value="all">Alle Kategorien</option>
+        </select>
+        <label><input type="checkbox" id="selected-only"> Nur ausgewählte Fragen</label>
+    </div>
+    
+    <div class="container">
+        <div class="question-section">
+            <h2 id="question-number">Frage 1</h2>
+            <p id="question-text">Lade Frage...</p>
+        </div>
+        <div class="image-section">
+            <img id="question-image" src="images/default.png" alt="Frage Bild">
+        </div>
+    </div>
+    
+    <div class="answers-section">
+        <div id="answers"></div>
+        <button id="toggle-correct">Nur richtige Antworten anzeigen</button>
+    </div>
+    
+    <div class="navigation">
+        <button id="prev">Zurück</button>
+        <button id="next">Weiter</button>
+    </div>
+    
+    <script>
+        let questions = [];
+        let selectedQuestions = [];
+        let filteredQuestions = [];
+        let currentIndex = 0;
+        let showOnlyCorrect = false;
+        let selectedCategory = "all";
+        let showSelectedOnly = false;
         
-        categories.forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat;
-            option.textContent = cat;
-            categorySelect.appendChild(option);
-        });
-    }
-
-    function filterQuestions() {
-        filteredQuestions = questions.filter(q => {
-            const categoryMatch = selectedCategory === "all" || q.categories.includes(selectedCategory);
-            const selectedMatch = !showOnlySelected || selectedQuestions.includes(q.question_number);
-            return categoryMatch && selectedMatch;
-        });
-        currentIndex = 0;
-        updateQuestion();
-    }
-
-    function updateQuestion() {
-        if (filteredQuestions.length === 0) {
-            document.getElementById('question-text').textContent = 'Keine Fragen verfügbar.';
-            document.getElementById('answers').innerHTML = '';
-            document.getElementById('question-image').src = 'images/default.png';
-            document.getElementById('progress-text').textContent = `0 / 0 Fragen`;
-            return;
-        }
-
-        const question = filteredQuestions[currentIndex];
-        document.getElementById('progress-text').textContent = `${currentIndex + 1} / ${filteredQuestions.length} Fragen, ${question.categories.join(', ')}`;
-        document.getElementById('question-number').textContent = `Frage ${question.question_number}`;
-        document.getElementById('question-text').textContent = question.question;
-        document.getElementById('question-image').src = question.image;
-
-        const answersContainer = document.getElementById('answers');
-        answersContainer.innerHTML = '';
-
-        question.options.forEach(option => {
-            if (!showOnlyCorrect || option.correct) {
-                const answerDiv = document.createElement('div');
-                answerDiv.textContent = option.text;
-                answerDiv.classList.add('answer');
-                if (option.correct) answerDiv.classList.add('correct');
-                answersContainer.appendChild(answerDiv);
+        async function loadQuestions() {
+            try {
+                const response = await fetch('questions.json');
+                const selectedResponse = await fetch('selected_questions.json');
+                if (!response.ok || !selectedResponse.ok) throw new Error('JSON file not found');
+                
+                questions = await response.json();
+                selectedQuestions = await selectedResponse.json();
+                populateCategories();
+                filterQuestions();
+            } catch (error) {
+                console.error('Error loading questions:', error);
+                document.getElementById('question-text').textContent = 'Fehler beim Laden der Fragen!';
             }
+        }
+        
+        function filterQuestions() {
+            filteredQuestions = questions.filter(q => 
+                (selectedCategory === "all" || q.categories.includes(selectedCategory)) && 
+                (!showSelectedOnly || selectedQuestions.includes(q.question_number))
+            );
+            currentIndex = 0;
+            updateQuestion();
+        }
+        
+        function updateQuestion() {
+            if (filteredQuestions.length === 0) return;
+            const question = filteredQuestions[currentIndex];
+            document.getElementById('question-number').textContent = `Frage ${question.question_number}`;
+            document.getElementById('question-text').textContent = question.question;
+            document.getElementById('question-image').src = question.image;
+        }
+        
+        document.getElementById('selected-only').addEventListener('change', (event) => {
+            showSelectedOnly = event.target.checked;
+            filterQuestions();
         });
-    }
-
-    document.getElementById('prev').addEventListener('click', () => {
-        if (currentIndex > 0) {
-            currentIndex--;
-            updateQuestion();
-        }
-    });
-
-    document.getElementById('next').addEventListener('click', () => {
-        if (currentIndex < filteredQuestions.length - 1) {
-            currentIndex++;
-            updateQuestion();
-        }
-    });
-
-    document.getElementById('toggle-correct').addEventListener('click', () => {
-        showOnlyCorrect = !showOnlyCorrect;
-        updateQuestion();
-    });
-
-    document.getElementById('category-select').addEventListener('change', (event) => {
-        selectedCategory = event.target.value;
-        filterQuestions();
-    });
-
-    document.getElementById('toggle-selected').addEventListener('change', (event) => {
-        showOnlySelected = event.target.checked;
-        filterQuestions();
-    });
-
-    loadQuestions();
-</script>
+        
+        loadQuestions();
+    </script>
+</body>
+</html>
