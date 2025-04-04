@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Catalogue</title>
+    <link rel="stylesheet" href="styles.css">
+<style>
+        body {
+            font-family: sans-serif;
+            background-color: #222;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            font-size: 16px;
+        }
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+        }
+        @media (max-width: 480px) {
+            body {
+                font-size: 12px;
+            }
+        }
+        .progress-bar {
+            background: #ddd;
+            color: black;
+            padding: 10px;
+            font-size: 1.2em;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+        }
+        .question-section {
+            width: 100%;
+            text-align: left;
+            font-size: 1.5em;
+            padding: 10px;
+        }
+        @media (max-width: 768px) {
+            .question-section {
+                font-size: 1.2em;
+            }
+        }
+        @media (max-width: 480px) {
+            .question-section {
+                font-size: 1em;
+            }
+        }
+        .image-section {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        @media (min-width: 768px) {
+            .image-section {
+                flex: 1;
+                margin-top: 0;
+            }
+        }
+        .image-section img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+        }
+        .answers-section {
+            margin-top: 20px;
+            width: 100%;
+        }
+        .answer {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px auto;
+            width: 90%;
+            background: #444;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .answer {
+                font-size: 1em;
+            }
+        }
+        @media (max-width: 480px) {
+            .answer {
+                font-size: 0.9em;
+            }
+        }
+        .correct {
+            background: #4CAF50 !important;
+            color: white;
+        }
+        .navigation {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #fff;
+            color: black;
+            padding: 10px 20px;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        @media (max-width: 768px) {
+            button {
+                font-size: 1em;
+            }
+        }
+        @media (max-width: 480px) {
+            button {
+                font-size: 0.9em;
+            }
+        }
+        button:hover {
+            background: #ddd;
+        }
+        .category-filter, .search-bar {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar">
+        <span id="progress-text">0 / 52 Fragen, Kategorie</span>
+    </div>
+    
+    <div class="category-filter">
+        <label for="category-select">Kategorie:</label>
+        <select id="category-select">
+            <option value="all">Alle Kategorien</option>
+        </select>
+    </div>
+    
+    <div class="container">
+        <div class="question-section">
+            <h2 id="question-number">Frage 1</h2>
+            <p id="question-text">Lade Frage...</p>
+        </div>
+        <div class="image-section">
+            <img id="question-image" src="images/default.png" alt="Frage Bild">
+        </div>
+    </div>
+    
+    <div class="answers-section">
+        <div id="answers"></div>
+        <button id="toggle-correct">Nur richtige Antworten anzeigen</button>
+    </div>
+    
+    <div class="navigation">
+        <button id="prev">Zurück</button>
+        <button id="next">Weiter</button>
+    </div>
+    
+<script>
+    let questions = [];
+    let selectedQuestions = [];
+    let filteredQuestions = [];
+    let currentIndex = 0;
+    let showOnlyCorrect = false;
+
+    async function loadQuestions() {
+        try {
+            const [questionsResponse, selectedResponse] = await Promise.all([
+                fetch('questions.json'),
+                fetch('selected-questions.json')
+            ]);
+
+            if (!questionsResponse.ok || !selectedResponse.ok) throw new Error('Files not found');
+
+            questions = await questionsResponse.json();
+            selectedQuestions = await selectedResponse.json(); // Array of numbers like [1, 3, 5]
+
+            filteredQuestions = questions.filter(q => selectedQuestions.includes(q.question_number));
+            currentIndex = 0;
+            updateQuestion();
+
+        } catch (error) {
+            console.error('Error loading data:', error);
+            document.getElementById('question-text').textContent = 'Fehler beim Laden der Fragen!';
+        }
+    }
+
+    function updateQuestion() {
+        if (filteredQuestions.length === 0) return;
+
+        const question = filteredQuestions[currentIndex];
+        document.getElementById('progress-text').textContent = `${currentIndex + 1} / ${filteredQuestions.length} Fragen, ${question.categories.join(', ')}`;
+        document.getElementById('question-number').textContent = `Frage ${question.question_number}`;
+        document.getElementById('question-text').textContent = question.question;
+        document.getElementById('question-image').src = question.image;
+
+        const answersContainer = document.getElementById('answers');
+        answersContainer.innerHTML = '';
+
+        question.options.forEach(option => {
+            if (!showOnlyCorrect || option.correct) {
+                const answerDiv = document.createElement('div');
+                answerDiv.textContent = option.text;
+                answerDiv.classList.add('answer');
+                if (option.correct) answerDiv.classList.add('correct');
+                answersContainer.appendChild(answerDiv);
+            }
+        });
+    }
+
+    document.getElementById('prev').addEventListener('click', () => {
+        if (currentIndex > 0) {
+            currentIndex--;
+            updateQuestion();
+        }
+    });
+
+    document.getElementById('next').addEventListener('click', () => {
+        if (currentIndex < filteredQuestions.length - 1) {
+            currentIndex++;
+            updateQuestion();
+        }
+    });
+
+    document.getElementById('toggle-correct').addEventListener('click', () => {
+        showOnlyCorrect = !showOnlyCorrect;
+        updateQuestion();
+    });
+
+    // No category filter needed on this page
+    document.querySelector('.category-filter').style.display = 'none';
+
+    loadQuestions();
+</script>
+  <div class="navigation">
+    <a href="index.html">
+        <button>Zurück zur Übersicht</button>
+    </a>
+</div>
+</body>
+</html>
+
+
+
