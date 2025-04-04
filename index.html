@@ -1,0 +1,112 @@
+<script>
+    let questions = [];
+    let selectedQuestions = [];
+    let filteredQuestions = [];
+    let currentIndex = 0;
+    let showOnlyCorrect = false;
+    let selectedCategory = "all";
+    let showOnlySelected = false;
+
+    async function loadQuestions() {
+        try {
+            const [questionsResponse, selectedResponse] = await Promise.all([
+                fetch('questions.json'),
+                fetch('selected-questions.json')
+            ]);
+
+            if (!questionsResponse.ok || !selectedResponse.ok) throw new Error('Fehler beim Laden der Dateien.');
+
+            questions = await questionsResponse.json();
+            selectedQuestions = await selectedResponse.json(); // e.g., [1, 3, 5]
+
+            populateCategories();
+            filterQuestions();
+        } catch (error) {
+            console.error('Fehler beim Laden:', error);
+            document.getElementById('question-text').textContent = 'Fehler beim Laden der Fragen!';
+        }
+    }
+
+    function populateCategories() {
+        const categorySelect = document.getElementById('category-select');
+        const categories = new Set();
+        questions.forEach(q => q.categories.forEach(cat => categories.add(cat)));
+        
+        categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            categorySelect.appendChild(option);
+        });
+    }
+
+    function filterQuestions() {
+        filteredQuestions = questions.filter(q => {
+            const categoryMatch = selectedCategory === "all" || q.categories.includes(selectedCategory);
+            const selectedMatch = !showOnlySelected || selectedQuestions.includes(q.question_number);
+            return categoryMatch && selectedMatch;
+        });
+        currentIndex = 0;
+        updateQuestion();
+    }
+
+    function updateQuestion() {
+        if (filteredQuestions.length === 0) {
+            document.getElementById('question-text').textContent = 'Keine Fragen verfügbar.';
+            document.getElementById('answers').innerHTML = '';
+            document.getElementById('question-image').src = 'images/default.png';
+            document.getElementById('progress-text').textContent = `0 / 0 Fragen`;
+            return;
+        }
+
+        const question = filteredQuestions[currentIndex];
+        document.getElementById('progress-text').textContent = `${currentIndex + 1} / ${filteredQuestions.length} Fragen, ${question.categories.join(', ')}`;
+        document.getElementById('question-number').textContent = `Frage ${question.question_number}`;
+        document.getElementById('question-text').textContent = question.question;
+        document.getElementById('question-image').src = question.image;
+
+        const answersContainer = document.getElementById('answers');
+        answersContainer.innerHTML = '';
+
+        question.options.forEach(option => {
+            if (!showOnlyCorrect || option.correct) {
+                const answerDiv = document.createElement('div');
+                answerDiv.textContent = option.text;
+                answerDiv.classList.add('answer');
+                if (option.correct) answerDiv.classList.add('correct');
+                answersContainer.appendChild(answerDiv);
+            }
+        });
+    }
+
+    document.getElementById('prev').addEventListener('click', () => {
+        if (currentIndex > 0) {
+            currentIndex--;
+            updateQuestion();
+        }
+    });
+
+    document.getElementById('next').addEventListener('click', () => {
+        if (currentIndex < filteredQuestions.length - 1) {
+            currentIndex++;
+            updateQuestion();
+        }
+    });
+
+    document.getElementById('toggle-correct').addEventListener('click', () => {
+        showOnlyCorrect = !showOnlyCorrect;
+        updateQuestion();
+    });
+
+    document.getElementById('category-select').addEventListener('change', (event) => {
+        selectedCategory = event.target.value;
+        filterQuestions();
+    });
+
+    document.getElementById('toggle-selected').addEventListener('change', (event) => {
+        showOnlySelected = event.target.checked;
+        filterQuestions();
+    });
+
+    loadQuestions();
+</script>
