@@ -177,6 +177,7 @@
     let filteredQuestions = [];
     let currentIndex = 0;
     let showOnlyCorrect = false;
+    const selectedSet = new Set(selectedQuestions.map(Number)); // Make sure they’re 
 
     async function loadQuestions() {
         try {
@@ -199,6 +200,12 @@
             document.getElementById('question-text').textContent = 'Fehler beim Laden der Fragen!';
         }
     }
+
+        function filterQuestions() {
+    const categoryMatch = selectedCategory === "all" || q.categories.includes(selectedCategory);
+    const selectedMatch = !showOnlySelected || selectedSet.has(Number(q.question_number));
+    return categoryMatch && selectedMatch;
+        }
 
     function updateQuestion() {
         if (filteredQuestions.length === 0) return;
