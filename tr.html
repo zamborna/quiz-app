@@ -145,9 +145,9 @@
     </div>
     
     <div class="category-filter">
-        <label for="category-select">Kategorie:</label>
+        <label for="category-select">Kategori:</label>
         <select id="category-select">
-            <option value="all">Alle Kategorien</option>
+            <option value="all">Tüm Kategoriler</option>
         </select>
     </div>
     
@@ -163,17 +163,17 @@
     
     <div class="answers-section">
         <div id="answers"></div>
-        <button id="toggle-correct">Nur richtige Antworten anzeigen</button>
+        <button id="toggle-correct">Cevapları göster</button>
     </div>
     
     <div class="navigation">
-        <button id="prev">Zurück</button>
-        <button id="next">Weiter</button>
+        <button id="prev">Geri</button>
+        <button id="next">İleri</button>
     </div>
     
   <div class="navigation">
     <a href="https://zamborna.github.io/fahrschule/">
-        <button>selected questions</button>
+        <button>Seçilmiş Sorular</button>
     </a>
  </div>
  <div class="navigation">
@@ -225,7 +225,7 @@
             if (filteredQuestions.length === 0) return;
             
             const question = filteredQuestions[currentIndex];
-            document.getElementById('progress-text').textContent = `${currentIndex + 1} / ${filteredQuestions.length} Fragen, ${question.categories.join(', ')}`;
+            document.getElementById('progress-text').textContent = `${currentIndex + 1} / ${filteredQuestions.length} Sorular, ${question.categories.join(', ')}`;
             document.getElementById('question-number').textContent = `Soru ${question.question_number}`;
             document.getElementById('question-text').textContent = question.question;
             document.getElementById('question-image').src = question.image;
