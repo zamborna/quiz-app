@@ -176,13 +176,12 @@
         <button>selected questions</button>
     </a>
  </div>
-    <div class="navigation">
+ <div class="navigation">
      <a href="https://zamborna.github.io/quiz-app/">
         <button>DE</button>
     </a>
-    </div>
-    
-    
+</div>
+
     <script>
         let questions = [];
         let filteredQuestions = [];
@@ -227,7 +226,7 @@
             
             const question = filteredQuestions[currentIndex];
             document.getElementById('progress-text').textContent = `${currentIndex + 1} / ${filteredQuestions.length} Fragen, ${question.categories.join(', ')}`;
-            document.getElementById('question-number').textContent = `Frage ${question.question_number}`;
+            document.getElementById('question-number').textContent = `Soru ${question.question_number}`;
             document.getElementById('question-text').textContent = question.question;
             document.getElementById('question-image').src = question.image;
             
